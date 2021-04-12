@@ -10,18 +10,39 @@ class Register extends Component {
       textUser: '',
       textEmail: '',
       textPass: '',
+      secureTextEntry: true,
+      iconName: 'eye',
     };
   }
+  onIconPress = () => {
+    let iconName = this.state.secureTextEntry ? 'eye-off' : 'eye';
+
+    this.setState({
+      secureTextEntry: !this.state.secureTextEntry,
+      iconName: iconName,
+    });
+  };
   render() {
     return (
       <View style={styles.mainCointainer}>
-        <Icon style={styles.icon} name="account-plus" size={70} color="blue" />
-        <Text style={styles.textHeader}>Please Register here</Text>
+        <Icon
+          style={styles.icon}
+          name="account-plus"
+          size={70}
+          color="#00BFFF"
+        />
+        <Text style={styles.textHeader}>WELCOME !</Text>
+        <Text style={styles.textdesc}>create a new account</Text>
         <TextInput
           style={styles.inputContainer}
           label="Username"
           mode="outlined"
-          color="#000"
+          theme={{
+            colors: {
+              primary: '#00BFFF',
+              underlineColor: 'transparent',
+            },
+          }}
           value={this.state.textUser}
           onChangeText={val => this.setState({textUser: val})}
         />
@@ -29,21 +50,44 @@ class Register extends Component {
           style={styles.inputContainer}
           label="Email"
           mode="outlined"
+          theme={{
+            colors: {
+              primary: '#00BFFF',
+              underlineColor: 'transparent',
+            },
+          }}
           value={this.state.textEmail}
           onChangeText={val => this.setState({textEmail: val})}
         />
-        <TextInput
-          style={styles.inputContainer}
-          label="Password"
-          mode="outlined"
-          value={this.state.textPass}
-          onChangeText={val => this.setState({textPass: val})}
-        />
+        <View style={styles.password}>
+          <TextInput
+            style={styles.textInputPass}
+            label="Password"
+            mode="outlined"
+            secureTextEntry={this.state.secureTextEntry}
+            theme={{
+              colors: {
+                primary: '#00BFFF',
+                underlineColor: 'transparent',
+              },
+            }}
+            value={this.state.textPass}
+            onChangeText={val => this.setState({textPass: val})}
+          />
+          <Icon
+            style={styles.iconEye}
+            name={this.state.iconName}
+            size={26}
+            color="black"
+            onPress={() => this.onIconPress()}
+          />
+        </View>
         <Button
           style={styles.btnSignup}
           mode="contained"
-          color="#000"
+          color="#00BFFF"
           uppercase={false}
+          labelStyle={{color: 'white', fontSize: 18}}
           onPress={() => console.log('pressed')}>
           sign up using email
         </Button>
@@ -52,8 +96,9 @@ class Register extends Component {
         <Button
           style={styles.btnLogin}
           mode="outlined"
-          color="#000"
+          color="black"
           uppercase={false}
+          labelStyle={{color: 'black', fontSize: 15}}
           onPress={() => console.log('pressed')}>
           Existing User ?
         </Button>
@@ -65,12 +110,26 @@ class Register extends Component {
 const styles = StyleSheet.create({
   mainCointainer: {
     flex: 1,
-    paddingTop: 50,
+    paddingTop: 30,
     paddingHorizontal: '10%',
   },
   inputContainer: {
     marginVertical: 10,
   },
+  password: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  textInputPass: {
+    flex: 1,
+    paddingTop: 10,
+    paddingRight: 10,
+    paddingBottom: 10,
+    paddingLeft: 0,
+  },
+  iconEye: {position: 'absolute', right: 45, top: 41},
   textOr: {
     fontSize: 20,
     color: 'black',
@@ -85,7 +144,7 @@ const styles = StyleSheet.create({
   btnLogin: {
     marginVertical: 20,
     borderTopLeftRadius: 15,
-    borderColor: '#000',
+    borderColor: '#00BFFF',
     borderWidth: 2,
   },
   textHeader: {
@@ -93,6 +152,11 @@ const styles = StyleSheet.create({
     color: 'black',
     alignSelf: 'center',
     fontWeight: 'bold',
+  },
+  textdesc: {
+    fontSize: 20,
+    marginTop: 10,
+    alignSelf: 'flex-start',
   },
   icon: {
     alignSelf: 'center',
