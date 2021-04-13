@@ -73,7 +73,8 @@ class Login extends Component {
           mode="contained"
           color="#00B2FF"
           uppercase={false}
-          onPress={() => console.log('Pressed')}>
+          labelStyle={{color: 'white', fontSize: 18}}
+          onPress={() => this.props.navigation.navigate('Graph')}>
           sign in
         </Button>
       </View>

@@ -88,7 +88,7 @@ class Register extends Component {
           color="#00BFFF"
           uppercase={false}
           labelStyle={{color: 'white', fontSize: 18}}
-          onPress={() => console.log('pressed')}>
+          onPress={() => this.props.navigation.navigate('Login')}>
           sign up using email
         </Button>
         <Text style={styles.textOr}>or </Text>
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     paddingLeft: 0,
   },
-  iconEye: {position: 'absolute', right: 45, top: 41},
+  iconEye: {position: 'absolute', right: 45, top: 21},
   textOr: {
     fontSize: 20,
     color: 'black',
