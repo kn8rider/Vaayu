@@ -1,5 +1,12 @@
 import React, {Component} from 'react';
-import {View, StyleSheet, Text, ScrollView, TextInput} from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Text,
+  ScrollView,
+  TextInput,
+  ActivityIndicator,
+} from 'react-native';
 import {Grid, LineChart, XAxis, YAxis} from 'react-native-svg-charts';
 import {curveNatural} from 'd3-shape';
 import {scaleTime} from 'd3-scale';
@@ -7,20 +14,40 @@ import {Circle, Path} from 'react-native-svg';
 import axios from 'axios';
 import LinearGradient from 'react-native-linear-gradient';
 import moment from 'moment';
+import {connect} from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import {logoutAction} from './Redux/index';
+import {Snackbar} from 'react-native-paper';
 
 class Graph extends Component {
   constructor(props) {
     super(props);
     this.state = {
       data: null,
-      cityInput: 'shanghai',
+      cityInput: '',
       status: 'error',
+      isLoading: false,
+      visibleSnackbar: false,
+      aqi: null,
     };
   }
 
+  logoutFunction = () => {
+    this.props.logoutAction();
+    this.props.navigation.navigate('Login');
+  };
+
+  onToggleSnackBar = () => {
+    this.setState({visibleSnackbar: true});
+  };
+
+  onDismissSnackBar = () => {
+    this.setState({visibleSnackbar: false});
+  };
+
   getAirQualityData = () => {
     if (this.state.cityInput.trim().length != 0) {
+      this.setState({isLoading: true});
       axios
         .get(
           'https://api.waqi.info/feed/' +
@@ -28,10 +55,17 @@ class Graph extends Component {
             '/?token=5402f0fa4924f8c14f4a6f35148f8d9cfb9e850a',
         )
         .then(res => {
-          this.setState({data: res.data.data, status: res.data.status});
+          this.setState({
+            data: res.data.data,
+            status: res.data.status,
+            aqi: res.data.data.aqi,
+          });
         })
         .catch(e => {
-          console.log(e);
+          this.onToggleSnackBar();
+        })
+        .then(() => {
+          this.setState({isLoading: false});
         });
     }
   };
@@ -59,7 +93,13 @@ class Graph extends Component {
         xAxisDateArray.push(this.state.data.forecast.daily.uvi[i].day);
         uv.push(this.state.data.forecast.daily.uvi[i].avg);
       }
-      var xAxisset = [...new Set(xAxisDateArray)];
+
+      var xAxisset = new Array();
+      for (var i = 0; i < xAxisDateArray.length; i++) {
+        if (xAxisset.indexOf(xAxisDateArray[i]) === -1) {
+          xAxisset.push(xAxisDateArray[i]);
+        }
+      }
       var xAxisDate = new Array();
       for (var i = 0; i < xAxisset.length; i++) {
         xAxisDate.push({date: xAxisset[i]});
@@ -161,13 +201,16 @@ class Graph extends Component {
                   fontWeight: '600',
                   alignSelf: 'flex-start',
                 }}>
-                Hi, Kn8Rider
+                Hi, {this.props.username !== null ? this.props.username : ''}
               </Text>
               <Icon
                 style={{alignSelf: 'flex-end', marginTop: -30, marginRight: 20}}
                 name="logout"
                 size={35}
                 color="#000"
+                onPress={() => {
+                  this.logoutFunction();
+                }}
               />
             </View>
             <View
@@ -197,41 +240,49 @@ class Graph extends Component {
                 }}
               />
             </View>
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'center',
-                marginTop: 30,
-              }}>
-              <Text
-                style={{fontSize: 18, fontWeight: '600', alignSelf: 'center'}}>
-                AQI :
-              </Text>
-              <Text
+            {this.state.aqi !== null ? (
+              <View
                 style={{
-                  fontSize: 35,
-                  fontWeight: '800',
-                  alignSelf: 'center',
-                  marginLeft: 10,
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  marginTop: 30,
                 }}>
-                65
-              </Text>
-              <Text
-                style={{
-                  fontSize: 20,
-                  fontWeight: '800',
-                  marginBottom: 30,
-                  marginLeft: 10,
-                }}>
-                ppm | ppb
-              </Text>
-              <Icon
-                style={{alignSelf: 'center', marginLeft: 20}}
-                name="weather-snowy-heavy"
-                size={40}
-                color="black"
-              />
-            </View>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: '600',
+                    alignSelf: 'center',
+                  }}>
+                  AQI :
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 35,
+                    fontWeight: '800',
+                    alignSelf: 'center',
+                    marginLeft: 10,
+                  }}>
+                  {this.state.aqi}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: '800',
+                    marginBottom: 30,
+                    marginLeft: 10,
+                  }}>
+                  ppm | ppb
+                </Text>
+                <Icon
+                  style={{alignSelf: 'center', marginLeft: 20}}
+                  name="weather-snowy-heavy"
+                  size={40}
+                  color="black"
+                />
+              </View>
+            ) : (
+              <View></View>
+            )}
             <Text
               style={{
                 marginTop: 30,
@@ -297,7 +348,9 @@ class Graph extends Component {
                 </View>
               </View>
             ) : (
-              <Text style={{marginLeft: 20}}>No data to display</Text>
+              <Text style={{marginLeft: 20, alignSelf: 'center', fontSize: 18}}>
+                No data to display
+              </Text>
             )}
           </View>
           <View
@@ -314,6 +367,7 @@ class Graph extends Component {
                 backgroundColor: '#ef476f',
                 borderRadius: 15,
                 marginRight: 10,
+                marginTop: 3,
               }}
             />
             <Text>PM-25</Text>
@@ -325,6 +379,7 @@ class Graph extends Component {
                 borderRadius: 15,
                 marginLeft: 20,
                 marginRight: 10,
+                marginTop: 3,
               }}
             />
             <Text>PM-10</Text>
@@ -336,6 +391,7 @@ class Graph extends Component {
                 borderRadius: 15,
                 marginRight: 10,
                 marginLeft: 20,
+                marginTop: 3,
               }}
             />
             <Text>Ozone</Text>
@@ -346,12 +402,26 @@ class Graph extends Component {
                 backgroundColor: '#ffd60a',
                 borderRadius: 15,
                 marginLeft: 20,
+                marginTop: 3,
                 marginRight: 10,
               }}
             />
             <Text>UVI</Text>
           </View>
         </LinearGradient>
+        <ActivityIndicator
+          size="large"
+          color="#00BFFF"
+          style={styles.activityindicator}
+          animating={this.state.isLoading}
+        />
+        <Snackbar
+          visible={this.state.visibleSnackbar}
+          onDismiss={() => {
+            this.onDismissSnackBar();
+          }}>
+          Something Went Wrong !
+        </Snackbar>
       </View>
     );
   }
@@ -361,6 +431,30 @@ const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
   },
+  activityindicator: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
 
-export default Graph;
+const mapStateToProps = state => {
+  return {
+    email: state.email,
+    password: state.password,
+    username: state.username,
+  };
+};
+const mapDispatchToProps = dispatch => {
+  return {
+    logoutAction: () => {
+      dispatch(logoutAction());
+    },
+  };
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(Graph);
