@@ -1,27 +1,96 @@
 import React, {Component} from 'react';
-import {View, StyleSheet, Text, ScrollView} from 'react-native';
+import {View, StyleSheet, Text, ScrollView, TextInput} from 'react-native';
 import {Grid, LineChart, XAxis, YAxis} from 'react-native-svg-charts';
 import {curveNatural} from 'd3-shape';
+import {scaleTime} from 'd3-scale';
 import {Circle, Path} from 'react-native-svg';
+import axios from 'axios';
+import LinearGradient from 'react-native-linear-gradient';
+import moment from 'moment';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 class Graph extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      data: null,
+      cityInput: 'shanghai',
+      status: 'error',
+    };
+  }
+
+  getAirQualityData = () => {
+    if (this.state.cityInput.trim().length != 0) {
+      axios
+        .get(
+          'https://api.waqi.info/feed/' +
+            this.state.cityInput +
+            '/?token=5402f0fa4924f8c14f4a6f35148f8d9cfb9e850a',
+        )
+        .then(res => {
+          this.setState({data: res.data.data, status: res.data.status});
+        })
+        .catch(e => {
+          console.log(e);
+        });
+    }
+  };
   render() {
-    const data1 = [50, 10, 40, 95, -4, -24, 85, 91, 35, 53];
-    const data2 = [-87, 66, -69, 92, -40, -61, 16, 62, 78, 90];
+    if (this.state.data != null && this.state.status != 'error') {
+      var oxygen = new Array();
+      var pmten = new Array();
+      var pmtweFive = new Array();
+      var uv = new Array();
+      var xAxisDateArray = new Array();
+
+      for (var i = 0; i < this.state.data.forecast.daily.o3.length; i++) {
+        xAxisDateArray.push(this.state.data.forecast.daily.o3[i].day);
+        oxygen.push(this.state.data.forecast.daily.o3[i].avg);
+      }
+      for (var i = 0; i < this.state.data.forecast.daily.pm10.length; i++) {
+        xAxisDateArray.push(this.state.data.forecast.daily.pm10[i].day);
+        pmten.push(this.state.data.forecast.daily.pm10[i].avg);
+      }
+      for (var i = 0; i < this.state.data.forecast.daily.pm25.length; i++) {
+        xAxisDateArray.push(this.state.data.forecast.daily.pm25[i].day);
+        pmtweFive.push(this.state.data.forecast.daily.pm25[i].avg);
+      }
+      for (var i = 0; i < this.state.data.forecast.daily.uvi.length; i++) {
+        xAxisDateArray.push(this.state.data.forecast.daily.uvi[i].day);
+        uv.push(this.state.data.forecast.daily.uvi[i].avg);
+      }
+      var xAxisset = [...new Set(xAxisDateArray)];
+      var xAxisDate = new Array();
+      for (var i = 0; i < xAxisset.length; i++) {
+        xAxisDate.push({date: xAxisset[i]});
+      }
+    }
 
     //Array of datasets, following this syntax:
     const data = [
       {
-        data: data1,
-        svg: {stroke: '#1d3557'},
+        data: oxygen,
+        svg: {stroke: '#21143F'},
       },
       {
-        data: data2,
-        svg: {stroke: '#457b9d'},
+        data: pmten,
+        svg: {stroke: '#3d5a80'},
+      },
+      {
+        data: pmtweFive,
+        svg: {stroke: '#ef476f'},
+      },
+      {
+        data: uv,
+        svg: {stroke: '#ffd60a'},
       },
     ];
-    //const data = [ 50, 10, 40, 95, -4, -24, 85, 91, 35, 53, -53, 24, 50, -20, -80 ]
 
+    let weekday = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][
+      new Date().getDay()
+    ];
+    var time = moment().utcOffset('+05:30').format('hh:mm a');
+    var Ctime = time.toUpperCase();
     const axesSvg = {fontSize: 10, fill: '#0096c7'};
     const verticalContentInset = {top: 10, bottom: 10};
     const xAxisHeight = 30;
@@ -47,8 +116,28 @@ class Graph extends Component {
           fill={'white'}
         />
       ));
+      var data3map = data[2]['data'].map((value, index) => (
+        <Circle
+          key={index}
+          cx={x(index)}
+          cy={y(value)}
+          r={4}
+          stroke={'rgb(134, 65, 244)'}
+          fill={'white'}
+        />
+      ));
+      var data4map = data[3]['data'].map((value, index) => (
+        <Circle
+          key={index}
+          cx={x(index)}
+          cy={y(value)}
+          r={4}
+          stroke={'rgb(134, 65, 244)'}
+          fill={'white'}
+        />
+      ));
 
-      var mydata = [data1map, data2map];
+      var mydata = [data1map, data2map, data3map, data4map];
       return mydata;
     };
 
@@ -58,64 +147,211 @@ class Graph extends Component {
 
     return (
       <View style={styles.mainContainer}>
-        <View style={{flexDirection: 'row', height: 200}}>
-          <YAxis
-            data={[-100, 100]}
-            style={{marginBottom: xAxisHeight}}
-            contentInset={verticalContentInset}
-            svg={axesSvg}
-            formatLabel={value => `${value}ºC`}
-          />
-          <View style={{flex: 1, marginLeft: 10}}>
-            <ScrollView
-              contentContainerStyle={{paddingHorizontal: 15}}
-              horizontal={true}>
-              <View style={{flexDirection: 'column'}}>
-                <LineChart
-                  style={{flex: 1, width: data1.length * 100}}
-                  data={data}
-                  contentInset={verticalContentInset}
-                  svg={{strokeWidth: 2}}
-                  curve={curveNatural}>
-                  <Grid />
-                  <Decorator />
-                  <Line />
-                </LineChart>
-                <XAxis
-                  style={{
-                    marginHorizontal: -10,
-                    height: xAxisHeight,
-                    width: data1.length * 100,
-                  }}
-                  data={data1}
-                  formatLabel={(value, index) => value}
-                  contentInset={{left: 10, right: 10}}
-                  svg={axesSvg}
-                />
-              </View>
-            </ScrollView>
+        <LinearGradient colors={['#f0efeb', '#98c1d9']} style={{flex: 1}}>
+          <View style={{flex: 1}}>
+            <View
+              style={{
+                marginTop: 30,
+              }}>
+              <Text
+                style={{
+                  fontSize: 25,
+                  fontFamily: 'verdana',
+                  marginLeft: 20,
+                  fontWeight: '600',
+                  alignSelf: 'flex-start',
+                }}>
+                Hi, Kn8Rider
+              </Text>
+              <Icon
+                style={{alignSelf: 'flex-end', marginTop: -30, marginRight: 20}}
+                name="logout"
+                size={35}
+                color="#000"
+              />
+            </View>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'center',
+                marginTop: 50,
+              }}>
+              <Icon
+                style={{marginTop: 15}}
+                name="map-marker"
+                size={25}
+                color="black"
+              />
+              <TextInput
+                placeholder="Enter  City"
+                style={{
+                  borderBottomWidth: 1,
+                  borderStyle: 'dashed',
+                  paddingBottom: -10,
+                  fontSize: 18,
+                }}
+                returnKeyType="go"
+                onChangeText={e => this.setState({cityInput: e})}
+                onSubmitEditing={() => {
+                  this.getAirQualityData();
+                }}
+              />
+            </View>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'center',
+                marginTop: 30,
+              }}>
+              <Text
+                style={{fontSize: 18, fontWeight: '600', alignSelf: 'center'}}>
+                AQI :
+              </Text>
+              <Text
+                style={{
+                  fontSize: 35,
+                  fontWeight: '800',
+                  alignSelf: 'center',
+                  marginLeft: 10,
+                }}>
+                65
+              </Text>
+              <Text
+                style={{
+                  fontSize: 20,
+                  fontWeight: '800',
+                  marginBottom: 30,
+                  marginLeft: 10,
+                }}>
+                ppm | ppb
+              </Text>
+              <Icon
+                style={{alignSelf: 'center', marginLeft: 20}}
+                name="weather-snowy-heavy"
+                size={40}
+                color="black"
+              />
+            </View>
+            <Text
+              style={{
+                marginTop: 30,
+                alignSelf: 'center',
+                fontSize: 25,
+                fontWeight: '600',
+              }}>
+              {weekday} , {Ctime}
+            </Text>
           </View>
-        </View>
-        <View style={{flexDirection: 'row'}}>
           <View
             style={{
-              width: 15,
-              height: 15,
-              backgroundColor: '#1d3557',
-              borderRadius: 15,
-            }}
-          />
-          <Text>Line 1</Text>
+              flex: 1,
+              justifyContent: 'flex-end',
+              marginBottom: 30,
+            }}>
+            {this.state.status == 'ok' ? (
+              <View
+                style={{
+                  flexDirection: 'row',
+                  height: 250,
+                  marginLeft: 10,
+                }}>
+                <YAxis
+                  data={[-100, 100]}
+                  style={{marginBottom: xAxisHeight}}
+                  contentInset={{top: 10, bottom: 10, left: 5, right: 5}}
+                  svg={axesSvg}
+                  formatLabel={value => `${value}`}
+                />
+                <View style={{flex: 1, marginLeft: 5}}>
+                  <ScrollView
+                    contentContainerStyle={{paddingHorizontal: 15}}
+                    horizontal={true}>
+                    <View style={{flexDirection: 'column'}}>
+                      <LineChart
+                        style={{flex: 1, width: xAxisset.length * 100}}
+                        data={data}
+                        contentInset={{top: 10, bottom: 10, left: 5, right: 5}}
+                        svg={{strokeWidth: 2}}
+                        curve={curveNatural}
+                        xScale={scaleTime}>
+                        <Grid />
+                        <Decorator />
+                        <Line />
+                      </LineChart>
+                      <XAxis
+                        style={{
+                          marginHorizontal: -10,
+                          height: xAxisHeight,
+                          width: xAxisset.length * 100,
+                        }}
+                        data={xAxisDate}
+                        scale={scaleTime}
+                        formatLabel={(value, index) =>
+                          moment(xAxisDate[index].date).format('YYYY-MM-DD')
+                        }
+                        contentInset={{left: 30, right: 30}}
+                        svg={axesSvg}
+                      />
+                    </View>
+                  </ScrollView>
+                </View>
+              </View>
+            ) : (
+              <Text style={{marginLeft: 20}}>No data to display</Text>
+            )}
+          </View>
           <View
             style={{
-              width: 15,
-              height: 15,
-              backgroundColor: '#457b9d',
-              borderRadius: 15,
-            }}
-          />
-          <Text>Line 2</Text>
-        </View>
+              flexDirection: 'row',
+              marginBottom: 20,
+
+              justifyContent: 'center',
+            }}>
+            <View
+              style={{
+                width: 15,
+                height: 15,
+                backgroundColor: '#ef476f',
+                borderRadius: 15,
+                marginRight: 10,
+              }}
+            />
+            <Text>PM-25</Text>
+            <View
+              style={{
+                width: 15,
+                height: 15,
+                backgroundColor: '#3d5a80',
+                borderRadius: 15,
+                marginLeft: 20,
+                marginRight: 10,
+              }}
+            />
+            <Text>PM-10</Text>
+            <View
+              style={{
+                width: 15,
+                height: 15,
+                backgroundColor: '#21143F',
+                borderRadius: 15,
+                marginRight: 10,
+                marginLeft: 20,
+              }}
+            />
+            <Text>Ozone</Text>
+            <View
+              style={{
+                width: 15,
+                height: 15,
+                backgroundColor: '#ffd60a',
+                borderRadius: 15,
+                marginLeft: 20,
+                marginRight: 10,
+              }}
+            />
+            <Text>UVI</Text>
+          </View>
+        </LinearGradient>
       </View>
     );
   }

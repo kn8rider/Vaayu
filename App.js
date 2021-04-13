@@ -1,19 +1,27 @@
 import React from 'react';
-import Graph from './assets/Graph';
-import Register from './assets/Register';
-import Login from './assets/Login';
 import {NavigationContainer} from '@react-navigation/native';
 import {createStackNavigator} from '@react-navigation/stack';
+import Login from './assets/login';
+import Graph from './assets/Graph';
+import Register from './assets/register';
+import {Provider} from 'react-redux';
+import store from './assets/Redux/store';
+
+const Stack = createStackNavigator();
 const App = () => {
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="Register">
-        <Stack.Screen name="Register" component={Register}></Stack.Screen>
-        <Stack.Screen name="Login" component={Login}></Stack.Screen>
-        <Stack.Screen name="Graph" component={Graph}></Stack.Screen>
-      </Stack.Navigator>
-    </NavigationContainer>
+    <Provider store={store}>
+      <NavigationContainer>
+        <Stack.Navigator
+          initialRouteName="Login"
+          screenOptions={{headerShown: false}}>
+          <Stack.Screen name="Login" component={Login} />
+          <Stack.Screen name="Register" component={Register} />
+          <Stack.Screen name="Graph" component={Graph} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </Provider>
   );
 };
-const Stack = createStackNavigator();
+
 export default App;
